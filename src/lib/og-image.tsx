@@ -31,7 +31,13 @@ export function renderOgImage({ eyebrow, title, subtitle }: { eyebrow: string; t
             <circle cx="24" cy="24" r="3" fill="#EEF0F4" />
             <circle cx="24" cy="8" r="3.6" fill="#C5F04A" />
           </svg>
-          <div style={{ display: "flex", fontSize: 30, fontWeight: 700, letterSpacing: 8 }}>{brand.name.toUpperCase()}</div>
+          <div style={{ display: "flex", fontSize: 38, fontWeight: 700, letterSpacing: -1 }}>
+            {brand.name.split(/(\.)/).map((part, index) => (
+              <span key={index} style={{ color: part === "." ? "#C5F04A" : "#EEF0F4" }}>
+                {part}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column" }}>

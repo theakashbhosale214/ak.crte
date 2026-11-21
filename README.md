@@ -1,6 +1,6 @@
 # Brand website
 
-Marketing site for a digital solutions brand (working name **Nexora**). It covers websites, custom
+Marketing site for **ak.crte**, a digital solutions brand. It covers websites, custom
 software and SaaS, SEO/GEO/AEO, analytics, AI automation, and cloud and maintenance services.
 
 ## Stack

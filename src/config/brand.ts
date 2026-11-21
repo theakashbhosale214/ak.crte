@@ -19,10 +19,10 @@ function resolveSiteUrl(): string {
 }
 
 export const brand = {
-  /** Display name. The wordmark renders this in uppercase via CSS. */
-  name: "Nexora",
+  /** Display name, rendered exactly as written (a "." is accented in the wordmark). */
+  name: "ak.crte",
   /** Used for copyright lines and structured data. */
-  legalName: "Nexora",
+  legalName: "ak.crte",
 
   tagline: "Your Business. Built for the Digital World.",
   taglineAlt: "From your first website to your next digital platform.",
@@ -31,7 +31,7 @@ export const brand = {
 
   /** Default meta description — written for people first, search engines second. */
   description:
-    "Nexora is a digital solutions partner for startups and growing businesses — high-performance websites, custom software and SaaS, SEO, GEO and AEO, analytics, AI automation, cloud hosting and ongoing support.",
+    "ak.crte is a digital solutions partner for startups and growing businesses — high-performance websites, custom software and SaaS, SEO, GEO and AEO, analytics, AI automation, cloud hosting and ongoing support.",
 
   /** The four stages of the business lifecycle the brand is built around. */
   lifecycle: ["Build", "Manage", "Grow", "Scale"] as const,

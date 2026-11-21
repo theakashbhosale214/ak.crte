@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowUp, Mail } from "lucide-react";
-import { Logo } from "@/components/brand/logo";
+import { Logo, Wordmark } from "@/components/brand/logo";
 import { GitHubIcon, LinkedInIcon } from "@/components/brand/social-icons";
 import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -35,9 +35,10 @@ export function SiteFooter() {
         <div className="absolute inset-x-0 top-0 h-px overflow-hidden">
           <div className="h-full w-1/3 animate-sweep bg-gradient-to-r from-transparent via-signal-400/70 to-transparent" />
         </div>
-        <div className="absolute -bottom-[0.18em] left-1/2 -translate-x-1/2 font-display text-[clamp(6rem,22vw,20rem)] leading-none font-semibold tracking-[0.06em] whitespace-nowrap text-transparent uppercase [-webkit-text-stroke:1px_rgb(255_255_255/0.07)]">
-          {brand.name}
-        </div>
+        <Wordmark
+          className="absolute -bottom-[0.22em] left-1/2 -translate-x-1/2 font-display text-[clamp(7rem,26vw,24rem)] leading-none font-semibold tracking-[-0.04em] whitespace-nowrap text-transparent [-webkit-text-stroke:1px_rgb(255_255_255/0.07)]"
+          dotClassName="text-transparent [-webkit-text-stroke:1px_rgb(197_240_74/0.3)]"
+        />
       </div>
 
       <Container className="pt-16 pb-10 sm:pt-20">

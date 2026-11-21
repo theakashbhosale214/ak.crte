@@ -45,6 +45,27 @@ export function BrandMark({ className, title }: MarkProps) {
   );
 }
 
+/**
+ * The brand name exactly as configured. A "." in the name (as in ak.crte)
+ * is picked out in the signal colour — the same lit point as the mark.
+ */
+export function Wordmark({ className, dotClassName }: { className?: string; dotClassName?: string }) {
+  const dot = brand.name.indexOf(".");
+  return (
+    <span className={className}>
+      {dot === -1 ? (
+        brand.name
+      ) : (
+        <>
+          {brand.name.slice(0, dot)}
+          <span className={cn("text-signal-400", dotClassName)}>.</span>
+          {brand.name.slice(dot + 1)}
+        </>
+      )}
+    </span>
+  );
+}
+
 /** Mark + wordmark, linking home. The name is read from the brand config. */
 export function Logo({ className, onClick }: { className?: string; onClick?: () => void }) {
   return (
@@ -55,9 +76,7 @@ export function Logo({ className, onClick }: { className?: string; onClick?: () 
       className={cn("group inline-flex items-center gap-2.5 rounded-md py-1", className)}
     >
       <BrandMark className="size-7 text-fg" />
-      <span className="font-display text-[1.0625rem] font-semibold uppercase leading-none tracking-[0.2em] text-fg">
-        {brand.name}
-      </span>
+      <Wordmark className="font-display text-[1.3125rem] leading-none font-semibold tracking-[-0.025em] text-fg" />
     </Link>
   );
 }
