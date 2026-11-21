@@ -1,0 +1,394 @@
+/* ==========================================================================
+   Ecosystem stage — layout blueprint
+   --------------------------------------------------------------------------
+   The illustration is composed on three fixed design canvases:
+     mobile   400 × 470   (viewport < 48rem)
+     tablet   800 × 600   (48rem – 72rem)
+     desktop 1200 × 640   (≥ 72rem)
+   Slots are positioned in % of the canvas and every module is sized in `em`.
+   The canvas font-size is derived from the container width (cqw), so each
+   composition scales uniformly — like an illustration — instead of reflowing.
+   A slot's own font-size acts as that module's scale factor.
+   ========================================================================== */
+
+.wrap {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+}
+
+.canvas {
+  position: relative;
+  font-size: calc(100cqw / 25); /* 1em = 16px on a 400px canvas */
+  height: 29.375em;
+}
+
+.slot {
+  position: absolute;
+  animation: enter 1s cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s) both;
+}
+
+/* Below desktop the modules aren't wired together, so they can drift. */
+@media (max-width: 71.98rem) {
+  .drift {
+    animation:
+      enter 1s cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s) both,
+      drift var(--drift-duration, 9s) ease-in-out calc(var(--delay, 0s) + 1s) infinite;
+  }
+}
+
+.search,
+.deploy,
+.workflow,
+.traces {
+  display: none;
+}
+
+/* — Mobile canvas (400 × 470) — */
+.browser {
+  left: 2.75%;
+  top: 0;
+  font-size: 0.7em;
+}
+.assistant {
+  left: 49%;
+  top: 27.7%;
+  font-size: 0.82em;
+}
+.analytics {
+  left: 0;
+  top: 61.7%;
+  font-size: 0.86em;
+}
+
+/* — Tablet canvas (800 × 600) — */
+@media (min-width: 48rem) {
+  .wrap {
+    max-width: 55rem;
+  }
+  .canvas {
+    font-size: calc(100cqw / 50);
+    height: 37.5em;
+  }
+  .search,
+  .deploy,
+  .workflow {
+    display: block;
+  }
+  .browser {
+    left: 16.25%;
+    top: 8%;
+    font-size: 1em;
+  }
+  .analytics {
+    left: 0;
+    top: 4%;
+    font-size: 0.88em;
+  }
+  .search {
+    left: 70.75%;
+    top: 1.33%;
+    font-size: 0.88em;
+  }
+  .assistant {
+    left: 0;
+    top: 55%;
+    font-size: 0.88em;
+  }
+  .deploy {
+    left: 70.25%;
+    top: 50%;
+    font-size: 0.88em;
+  }
+  .workflow {
+    left: 25.5%;
+    top: 80%;
+    font-size: 0.88em;
+  }
+}
+
+/* — Desktop canvas (1200 × 640) — modules are wired by traces — */
+@media (min-width: 72rem) {
+  .wrap {
+    max-width: 75rem;
+  }
+  .canvas {
+    font-size: calc(100cqw / 75);
+    height: 40em;
+  }
+  .traces {
+    display: block;
+  }
+  .browser {
+    left: 27.5%;
+    top: 7.5%;
+  }
+  .analytics {
+    left: 0.667%;
+    top: 4.375%;
+    font-size: 1em;
+  }
+  .assistant {
+    left: 3%;
+    top: 45.3125%;
+    font-size: 1em;
+  }
+  .search {
+    left: 76.833%;
+    top: 2.5%;
+    font-size: 1em;
+  }
+  .deploy {
+    left: 76%;
+    top: 45.625%;
+    font-size: 1em;
+  }
+  .workflow {
+    left: 29%;
+    top: 78.125%;
+    font-size: 1em;
+  }
+}
+
+/* ==========================================================================
+   Traces (desktop) — data pulses travelling between modules
+   ========================================================================== */
+
+.traces {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* With pathLength="1": a short dash travels the path, then pauses. */
+.pulse {
+  stroke-dasharray: 0.12 1.88;
+  stroke-dashoffset: 0.12;
+  animation: flow var(--flow-duration, 3.6s) linear var(--flow-delay, 0s) infinite;
+}
+
+/* ==========================================================================
+   Browser — cycles website → store → platform (15s loop, CSS only).
+   Each scene wipes in, fully opaque, over the previous one, so two layouts
+   are never blended. Cycle elements must be positioned (z-index).
+   ========================================================================== */
+
+.cycle {
+  clip-path: inset(0 100% 0 0);
+  animation: cycle 15s linear infinite;
+}
+.cycleB {
+  animation-delay: -10s;
+}
+.cycleC {
+  animation-delay: -5s;
+}
+
+/* ==========================================================================
+   Module details
+   ========================================================================== */
+
+/* Analytics: line draws in, area fades up. */
+.draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.8s cubic-bezier(0.65, 0, 0.35, 1) 1.3s forwards;
+}
+.fadeIn {
+  opacity: 0;
+  animation: fade-in 1.2s ease-out 2s forwards;
+}
+
+/* Assistant: reply arrives after the question, then a typing indicator. */
+.reply {
+  animation: enter 0.8s cubic-bezier(0.16, 1, 0.3, 1) 1.7s both;
+}
+.typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22em;
+}
+.typing > span {
+  width: 0.32em;
+  height: 0.32em;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.3;
+  animation: typing 1.2s ease-in-out infinite;
+}
+.typing > span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing > span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* Deploy log lines print in sequence. */
+.logLine {
+  animation: log-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) calc(1.2s + var(--i, 0) * 0.22s) both;
+}
+
+/* Workflow: each step lights up in turn while a pulse runs along the connectors. */
+.stepIcon {
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background-color: rgb(255 255 255 / 0.03);
+  color: var(--color-fg-subtle);
+  animation: step-on 4.8s ease-in-out calc(var(--i, 0) * 1.2s) infinite;
+}
+.connector {
+  position: relative;
+  flex: 1;
+  height: 1px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.12);
+}
+.connector::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, var(--color-signal-400), transparent);
+  transform: translateX(-100%);
+  animation: travel 4.8s ease-in-out calc(var(--i, 0) * 1.2s + 0.55s) infinite;
+}
+
+/* ==========================================================================
+   Keyframes (scoped to this module)
+   ========================================================================== */
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, var(--drift-y, -7px), 0);
+  }
+}
+
+@keyframes flow {
+  from {
+    stroke-dashoffset: 0.12;
+  }
+  to {
+    stroke-dashoffset: -1.88;
+  }
+}
+
+/* Scenes are offset by a third of the cycle (5s). A scene wipes in on top
+   (z 2) during the last 0.6s of its cycle, holds (z 1) for 5s while the next
+   one wipes over it, then is clipped away once fully covered. The hold ends
+   just short of 33.333% so no scene is ever visible on its boundary frame. */
+@keyframes cycle {
+  0%,
+  33.2% {
+    clip-path: inset(0 0 0 0);
+    z-index: 1;
+  }
+  33.25%,
+  95.99% {
+    clip-path: inset(0 100% 0 0);
+    z-index: 0;
+  }
+  96% {
+    clip-path: inset(0 100% 0 0);
+    z-index: 2;
+    animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    z-index: 2;
+  }
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: none;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-0.18em);
+  }
+}
+
+@keyframes log-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-0.6em, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes step-on {
+  0%,
+  40%,
+  100% {
+    border-color: rgb(255 255 255 / 0.1);
+    background-color: rgb(255 255 255 / 0.03);
+    color: var(--color-fg-subtle);
+    box-shadow: none;
+  }
+  6%,
+  26% {
+    border-color: rgb(197 240 74 / 0.55);
+    background-color: rgb(197 240 74 / 0.12);
+    color: var(--color-signal-300);
+    box-shadow:
+      0 0 0 0.25em rgb(197 240 74 / 0.07),
+      0 0 1.2em rgb(197 240 74 / 0.25);
+  }
+}
+
+@keyframes travel {
+  0% {
+    transform: translateX(-100%);
+  }
+  24%,
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+/* Reduced motion: hold the first browser scene, everything else at rest. */
+@media (prefers-reduced-motion: reduce) {
+  .cycle {
+    animation: none;
+    clip-path: inset(0 100% 0 0);
+  }
+  .cycleA {
+    clip-path: none;
+  }
+}
