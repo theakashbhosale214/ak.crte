@@ -54,7 +54,7 @@ src/
   components/
     brand/               Logo mark + wordmark, social icons
     layout/              Header, desktop nav, mobile menu, footer
-    sections/            Page sections (hero/ holds the ecosystem illustration)
+    sections/            Page sections (hero/deck/ holds the live 3D command deck)
     legal/               Shared layout for policy pages
     ui/                  Button, Container, Section, Eyebrow, SectionHeading, JsonLd, Spotlight
     motion/              MotionProvider, Reveal helpers

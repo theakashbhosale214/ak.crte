@@ -1,0 +1,584 @@
+/* ==========================================================================
+   Command deck — the hero's exploded 3D system of live dashboards.
+   --------------------------------------------------------------------------
+   Four glass plates (Scale → Grow → Manage → Build, bottom to top) are
+   stacked in real 3D with `preserve-3d`, wired by light beams and circled
+   by an orbit ring. Everything is sized in `em`; the viewport's font-size is
+   derived from the container width (cqw), so the whole scene scales.
+
+   Performance: every intro, focus and loop animation uses compositor-friendly
+   properties (transform / translate / rotate / opacity). The only CSS
+   variables changed at runtime are the pointer orbit and scroll explode
+   (--rx-mouse, --rz-mouse, --gap-scroll), written by deck-provider.tsx and
+   only on devices with a precise pointer.
+   ========================================================================== */
+
+.deck {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+}
+
+/* Nothing animates until the deck is actually on screen (deck-provider.tsx
+   sets data-play). On phones the deck starts below the fold, so its intro no
+   longer competes with the page load. A <noscript> rule in hero.tsx releases
+   it when JavaScript is unavailable. */
+.deck:not([data-play]) *,
+.deck:not([data-play]) *::before,
+.deck:not([data-play]) *::after {
+  animation-play-state: paused !important;
+}
+
+/* Phones: keep the stack, drop the most decorative layers of motion. */
+@media (max-width: 39.99rem) {
+  .orbit,
+  .pillar::after {
+    display: none;
+  }
+}
+
+.viewport {
+  position: relative;
+  font-size: calc(100cqw / 40);
+  height: 40em;
+  perspective: 150em;
+  perspective-origin: 50% 25%;
+}
+
+@media (min-width: 40rem) {
+  .viewport {
+    font-size: calc(100cqw / 44);
+  }
+}
+
+/* ---- Rig: camera angle, layer spacing ----------------------------------- */
+
+.rig {
+  --rx-base: 57deg;
+  --rz-base: -36deg;
+  --gap: calc(5em + var(--gap-scroll, 0em));
+  --open-height: 5.5em;
+  --rx-total: calc(var(--rx-base) + var(--rx-mouse, 0deg));
+  --rz-total: calc(var(--rz-base) + var(--rz-mouse, 0deg));
+  position: absolute;
+  left: 50%;
+  top: 69%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--rx-total)) rotateZ(var(--rz-total));
+}
+
+@media (min-width: 40rem) {
+  .rig {
+    left: 37%;
+    top: 67%;
+  }
+}
+
+@media (min-width: 64rem) {
+  .rig {
+    --open-height: 7em;
+    left: 36%;
+    top: 64%;
+  }
+}
+
+/* Intro turntable spin, on its own composited wrapper. */
+.spin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  animation: deck-spin 2.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+/* ---- Floor -------------------------------------------------------------- */
+
+.floor {
+  position: absolute;
+  left: -30em;
+  top: -30em;
+  width: 60em;
+  height: 60em;
+  transform: translateZ(-1.8em);
+  background:
+    radial-gradient(closest-side, rgb(197 240 74 / 0.16), rgb(95 227 236 / 0.07) 42%, transparent 70%),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.06) 0 1px, transparent 1px 2.5em),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.06) 0 1px, transparent 1px 2.5em);
+  -webkit-mask-image: radial-gradient(closest-side, #000 20%, transparent 76%);
+  mask-image: radial-gradient(closest-side, #000 20%, transparent 76%);
+  pointer-events: none;
+}
+
+.shadow {
+  position: absolute;
+  left: -17em;
+  top: -12em;
+  width: 34em;
+  height: 24em;
+  transform: translateZ(-1.7em);
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.7), transparent);
+  pointer-events: none;
+}
+
+/* ---- Plates ------------------------------------------------------------- */
+
+.plate {
+  position: absolute;
+  left: -14em;
+  top: -9.25em;
+  width: 28em;
+  height: 18.5em;
+  transform-style: preserve-3d;
+  transform: translate3d(var(--px, 0em), var(--py, 0em), calc((var(--layer) - 1) * var(--gap)));
+  transition: translate 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Starts compressed into a block, then springs open into layers. */
+  animation: plate-open 1.4s cubic-bezier(0.34, 1.36, 0.5, 1) 1.2s backwards;
+}
+
+/* Drop-in and idle float live on an inner wrapper, so they never fight the
+   plate's own spacing or focus lift. */
+.mover {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation:
+    plate-drop 1.05s cubic-bezier(0.22, 1, 0.36, 1) calc(0.25s + var(--order) * 0.17s) both,
+    plate-float var(--float-dur, 7s) ease-in-out calc(2.8s + var(--order) * 0.45s) infinite;
+}
+
+.body {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 1.1em;
+  border: 1px solid rgb(255 255 255 / 0.13);
+  background: linear-gradient(150deg, rgb(28 33 42 / 0.97), rgb(12 14 19 / 0.97) 62%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 0 3em -0.6em rgb(197 240 74 / 0.14);
+  color: var(--color-fg);
+  transition:
+    opacity 0.5s ease,
+    border-color 0.5s ease,
+    box-shadow 0.5s ease;
+  animation: deck-fade 0.5s ease calc(0.3s + var(--order) * 0.17s) both;
+}
+
+.light {
+  border-color: rgb(255 255 255 / 0.5);
+  background: #f3eee7;
+  color: #1f1b16;
+}
+
+/* A soft band of light that cascades down the stack every few seconds. */
+.body::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -40%;
+  width: 28%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.09), transparent);
+  transform: translateX(0) skewX(-14deg);
+  animation: deck-sweep 8s ease-in-out calc(3.2s + (4 - var(--layer)) * 0.35s) infinite;
+  pointer-events: none;
+}
+
+/* Rotating light around the top plate's edge: a big conic gradient spins
+   (transform only) behind a ring-shaped mask. */
+.ring {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  padding: 0.12em;
+  border-radius: inherit;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+.ring::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 130%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: conic-gradient(
+    transparent 0 60%,
+    rgb(197 240 74 / 0.95) 75%,
+    rgb(95 227 236 / 0.9) 84%,
+    transparent 93%
+  );
+  animation: deck-ring 5s linear infinite;
+}
+
+/* Glass thickness: the two edge faces that point toward the camera. */
+.edgeFront,
+.edgeSide {
+  position: absolute;
+  pointer-events: none;
+  animation: deck-fade 0.5s ease calc(0.3s + var(--order) * 0.17s) both;
+}
+
+.edgeFront {
+  left: 0.9em;
+  right: 0.9em;
+  bottom: 0;
+  height: 0.5em;
+  transform-origin: 50% 100%;
+  transform: rotateX(90deg);
+  background: linear-gradient(90deg, rgb(197 240 74 / 0.4), rgb(95 227 236 / 0.25));
+}
+
+.edgeSide {
+  top: 0.9em;
+  bottom: 0.9em;
+  left: 0;
+  width: 0.5em;
+  transform-origin: 0 50%;
+  transform: rotateY(90deg);
+  background: linear-gradient(180deg, rgb(95 227 236 / 0.16), rgb(197 240 74 / 0.3));
+}
+
+/* ---- Focus: the stack opens at the focused layer ------------------------
+   The focused plate rises slightly and glows; every plate above it lifts
+   away together, like opening a lid, so the focused dashboard is revealed.
+   Labels travel with their plates. Driven by `translate` transitions. */
+
+[data-deck][data-layer="1"] :is(.plate, .label)[data-layer="1"],
+[data-deck][data-layer="2"] :is(.plate, .label)[data-layer="2"],
+[data-deck][data-layer="3"] :is(.plate, .label)[data-layer="3"] {
+  translate: 0 0 0.9em;
+}
+
+[data-deck][data-layer="4"] :is(.plate, .label)[data-layer="4"] {
+  translate: 0 0 1.6em;
+}
+
+[data-deck][data-layer="3"] :is(.plate, .label)[data-layer="4"],
+[data-deck][data-layer="2"] :is(.plate, .label):is([data-layer="3"], [data-layer="4"]),
+[data-deck][data-layer="1"] :is(.plate, .label):is([data-layer="2"], [data-layer="3"], [data-layer="4"]) {
+  translate: 0 0 var(--open-height);
+}
+
+[data-deck][data-layer="1"] .plate[data-layer="1"] .body,
+[data-deck][data-layer="2"] .plate[data-layer="2"] .body,
+[data-deck][data-layer="3"] .plate[data-layer="3"] .body,
+[data-deck][data-layer="4"] .plate[data-layer="4"] .body {
+  border-color: rgb(197 240 74 / 0.6);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 0 4.5em -0.4em rgb(197 240 74 / 0.5);
+}
+
+[data-deck][data-layer="1"] .plate:not([data-layer="1"]) .body,
+[data-deck][data-layer="2"] .plate:not([data-layer="2"]) .body,
+[data-deck][data-layer="3"] .plate:not([data-layer="3"]) .body,
+[data-deck][data-layer="4"] .plate:not([data-layer="4"]) .body {
+  opacity: 0.42;
+}
+
+/* ---- Light beams through the layers ------------------------------------ */
+
+.pillar {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: 0.12em;
+  /* Tall enough to reach a lifted lid; fades out above the stack. */
+  height: calc(3 * var(--gap) + var(--open-height));
+  transform-origin: 50% 0;
+  transform: rotateX(90deg);
+  background: linear-gradient(
+    to bottom,
+    rgb(197 240 74 / 0.05),
+    rgb(197 240 74 / 0.55) 35%,
+    rgb(95 227 236 / 0.45) 72%,
+    transparent
+  );
+  opacity: 0;
+  animation: deck-fade 0.8s ease 1.8s forwards;
+  pointer-events: none;
+}
+
+.pillar::after {
+  content: "";
+  position: absolute;
+  left: -0.18em;
+  right: -0.18em;
+  top: 0;
+  height: 18%;
+  border-radius: 1em;
+  background: linear-gradient(to bottom, transparent, #ecfcb8, transparent);
+  transform: translateY(-100%);
+  animation: deck-rise 2.8s linear calc(2.4s + var(--delay, 0s)) infinite;
+}
+
+/* ---- Orbit ring --------------------------------------------------------- */
+
+.orbit {
+  position: absolute;
+  left: -17.5em;
+  top: -17.5em;
+  width: 35em;
+  height: 35em;
+  border-radius: 50%;
+  border: 1px dashed rgb(255 255 255 / 0.14);
+  transform: translateZ(calc(1.5 * var(--gap))) rotateZ(0deg);
+  animation:
+    deck-orbit 34s linear infinite,
+    deck-fade 1.2s ease 2.1s both;
+  pointer-events: none;
+}
+
+.orbitNode {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--angle));
+}
+
+.orbitNode::before {
+  content: "";
+  position: absolute;
+  top: -0.3em;
+  left: 50%;
+  width: 0.6em;
+  height: 0.6em;
+  margin-left: -0.3em;
+  border-radius: 50%;
+  background: var(--node, #c5f04a);
+  box-shadow: 0 0 1em var(--node, #c5f04a);
+}
+
+/* ---- Labels: billboarded to always face the viewer ---------------------- */
+
+.label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  white-space: nowrap;
+  transform-origin: 0 0;
+  transform: translate3d(var(--lx), var(--ly), calc((var(--layer) - 1) * var(--gap)))
+    rotateZ(calc(-1 * var(--rz-total))) rotateX(calc(-1 * var(--rx-total)));
+  transition: translate 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: deck-fade 0.7s ease calc(2.3s + var(--order) * 0.12s) both;
+  pointer-events: none;
+}
+
+.labelLine {
+  width: 2em;
+  height: 1px;
+  background: linear-gradient(90deg, rgb(197 240 74 / 0.9), rgb(255 255 255 / 0.15));
+}
+
+.labelLine::before {
+  content: "";
+  display: block;
+  width: 0.45em;
+  height: 0.45em;
+  margin-top: -0.2em;
+  margin-left: -0.2em;
+  border-radius: 50%;
+  background: #c5f04a;
+  box-shadow: 0 0 0.6em #c5f04a;
+}
+
+.labelText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+  padding: 0.45em 0.7em;
+  border-radius: 0.6em;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(8 9 12 / 0.75);
+  transition:
+    border-color 0.4s ease,
+    background-color 0.4s ease;
+}
+
+[data-deck][data-layer="1"] .label[data-layer="1"] .labelText,
+[data-deck][data-layer="2"] .label[data-layer="2"] .labelText,
+[data-deck][data-layer="3"] .label[data-layer="3"] .labelText,
+[data-deck][data-layer="4"] .label[data-layer="4"] .labelText {
+  border-color: rgb(197 240 74 / 0.6);
+  background: rgb(197 240 74 / 0.1);
+}
+
+@media (max-width: 39.99rem) {
+  .label {
+    display: none;
+  }
+}
+
+@media (max-width: 89.99rem) {
+  .labelDetail {
+    display: none;
+  }
+}
+
+/* ---- Legend (in the copy column) mirrors the focused layer ------------- */
+
+[data-deck][data-layer="1"] .legendItem[data-layer-target="1"],
+[data-deck][data-layer="2"] .legendItem[data-layer-target="2"],
+[data-deck][data-layer="3"] .legendItem[data-layer-target="3"],
+[data-deck][data-layer="4"] .legendItem[data-layer-target="4"] {
+  border-color: rgb(197 240 74 / 0.55);
+  background-color: rgb(197 240 74 / 0.08);
+  color: var(--color-fg);
+}
+
+[data-deck][data-layer="1"] .legendItem[data-layer-target="1"] .legendDot,
+[data-deck][data-layer="2"] .legendItem[data-layer-target="2"] .legendDot,
+[data-deck][data-layer="3"] .legendItem[data-layer-target="3"] .legendDot,
+[data-deck][data-layer="4"] .legendItem[data-layer-target="4"] .legendDot {
+  background-color: var(--color-signal-400);
+  box-shadow: 0 0 0.6rem var(--color-signal-400);
+}
+
+/* ---- Live widget details ------------------------------------------------ */
+
+.tick {
+  animation: deck-tick 0.9s ease-out;
+}
+
+.feedIn {
+  animation: deck-feed-in 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bar {
+  transform-origin: 50% 100%;
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pulse {
+  animation: deck-pulse 1.6s ease-in-out infinite;
+}
+
+/* ---- Keyframes ---------------------------------------------------------- */
+
+@keyframes deck-spin {
+  from {
+    transform: rotateZ(-34deg);
+  }
+  to {
+    transform: rotateZ(0deg);
+  }
+}
+
+@keyframes plate-open {
+  from {
+    translate: 0 0 calc((1 - var(--layer)) * 4.45em);
+  }
+  to {
+    translate: 0 0 0;
+  }
+}
+
+@keyframes plate-drop {
+  from {
+    translate: 0 0 16em;
+  }
+  to {
+    translate: 0 0 0;
+  }
+}
+
+@keyframes plate-float {
+  0%,
+  100% {
+    translate: 0 0 0;
+  }
+  50% {
+    translate: 0 0 0.45em;
+  }
+}
+
+@keyframes deck-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes deck-sweep {
+  0% {
+    transform: translateX(0) skewX(-14deg);
+  }
+  28%,
+  100% {
+    transform: translateX(620%) skewX(-14deg);
+  }
+}
+
+@keyframes deck-ring {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes deck-rise {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(560%);
+  }
+}
+
+@keyframes deck-orbit {
+  from {
+    transform: translateZ(calc(1.5 * var(--gap))) rotateZ(0deg);
+  }
+  to {
+    transform: translateZ(calc(1.5 * var(--gap))) rotateZ(360deg);
+  }
+}
+
+@keyframes deck-tick {
+  0% {
+    color: var(--color-signal-300);
+    text-shadow: 0 0 0.8em rgb(197 240 74 / 0.6);
+  }
+  100% {
+    color: inherit;
+    text-shadow: none;
+  }
+}
+
+@keyframes deck-feed-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.6em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes deck-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
